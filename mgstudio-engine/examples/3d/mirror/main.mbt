@@ -254,6 +254,105 @@ pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension with fn bind_gro
 }
 
 ///|
+// Bevy spawns the mirror with the typed
+// `MeshMaterial3d<ExtendedMaterial<StandardMaterial, ScreenSpaceTextureExtension>>`
+// registered through `MaterialPlugin` (`examples/3d/mirror.rs`); the legacy
+// untyped carrier is invisible to the typed material machinery (ISS-493).
+type ScreenSpaceTextureMaterial = @pbr.ExtendedMaterial[
+  @pbr.StandardMaterial,
+  ScreenSpaceTextureExtension,
+]
+
+///|
+let screen_space_texture_material_asset_resource_keys : @asset.AssetResourceKeys[
+  ScreenSpaceTextureMaterial,
+] = @asset.register_asset_resource_keys(
+  "examples.3d.mirror.ExtendedMaterial<StandardMaterial, ScreenSpaceTextureExtension>",
+)
+
+///|
+let screen_space_texture_material_keys : @pbr.MaterialKeys[
+  ScreenSpaceTextureMaterial,
+] = @pbr.register_material_keys(
+  "examples.3d.mirror.ExtendedMaterial<StandardMaterial, ScreenSpaceTextureExtension>",
+)
+
+///|
+pub impl @pbr.StandardMaterialExtension for ScreenSpaceTextureExtension with fn extended_material_asset_debug_name() {
+  "examples.3d.mirror.ExtendedMaterial<StandardMaterial, ScreenSpaceTextureExtension>"
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for ScreenSpaceTextureExtension with fn extended_material_asset_keys() {
+  screen_space_texture_material_asset_resource_keys
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for ScreenSpaceTextureExtension with fn extended_material_keys() {
+  screen_space_texture_material_keys
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for ScreenSpaceTextureExtension with fn vertex_shader_ref() {
+  @pbr.standard_material_extension_default_vertex_shader_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for ScreenSpaceTextureExtension with fn fragment_shader_ref() {
+  Some(SCREEN_SPACE_TEXTURE_SHADER)
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for ScreenSpaceTextureExtension with fn prepass_vertex_shader_ref() {
+  @pbr.standard_material_extension_default_prepass_vertex_shader_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for ScreenSpaceTextureExtension with fn prepass_fragment_shader_ref() {
+  @pbr.standard_material_extension_default_prepass_fragment_shader_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for ScreenSpaceTextureExtension with fn deferred_vertex_shader_ref() {
+  @pbr.standard_material_extension_default_deferred_vertex_shader_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for ScreenSpaceTextureExtension with fn deferred_fragment_shader_ref() {
+  @pbr.standard_material_extension_default_deferred_fragment_shader_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for ScreenSpaceTextureExtension with fn meshlet_fragment_shader_ref() {
+  @pbr.standard_material_extension_default_meshlet_fragment_shader_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for ScreenSpaceTextureExtension with fn meshlet_prepass_fragment_shader_ref() {
+  @pbr.standard_material_extension_default_meshlet_prepass_fragment_shader_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for ScreenSpaceTextureExtension with fn meshlet_deferred_fragment_shader_ref() {
+  @pbr.standard_material_extension_default_meshlet_deferred_fragment_shader_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for ScreenSpaceTextureExtension with fn enable_prepass_ref() {
+  @pbr.standard_material_extension_default_enable_prepass_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for ScreenSpaceTextureExtension with fn enable_shadows_ref() {
+  @pbr.standard_material_extension_default_enable_shadows_ref()
+}
+
+///|
+pub impl @pbr.StandardMaterialExtension for ScreenSpaceTextureExtension with fn specialize_ref() {
+  @pbr.standard_material_extension_default_specialize_ref()
+}
+
+///|
 priv struct AppStatus {
   mut drag_action : DragAction
 }
@@ -545,7 +644,9 @@ fn spawn_fox(
 fn spawn_mirror(
   commands : @app.Commands,
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
-  standard_materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  screen_space_materials : @app.ResMut[
+    @asset.Assets[ScreenSpaceTextureMaterial],
+  ],
   mirror_render_target : @asset.Handle[@asset.Image],
 ) -> @transform.Transform {
   let mirror_transform = @transform.Transform::identity()
@@ -565,20 +666,18 @@ fn spawn_mirror(
       @mesh_primitives_dim3.PlaneMeshBuilder::from_size(@math.Vec2::splat(1.0F)).build(),
     )
   })
-  let material = standard_materials.modify(fn(assets) {
-    assets.add(mirror_material_value)
+  let material = screen_space_materials.modify(fn(assets) {
+    assets.add(
+      @pbr.ExtendedMaterial::new(
+        mirror_material_value,
+        ScreenSpaceTextureExtension::ScreenSpaceTextureExtension(),
+      ),
+    )
   })
   let mirror_entity = commands.spawn(
     (
       @mesh.Mesh3d::new(mesh),
-      @pbr.MeshMaterial3d::new(material).with_extended_material(
-        Some(
-          @pbr.ExtendedMaterial::new(
-            mirror_material_value,
-            ScreenSpaceTextureExtension::ScreenSpaceTextureExtension(),
-          ).metadata(),
-        ),
-      ),
+      @pbr.MeshMaterial3dTyped::new(material),
       mirror_transform,
       Mirror::{  },
       @camera_render_layers.RenderLayers::layer(LAYER_MIRROR_SURFACE),
@@ -679,6 +778,9 @@ fn setup(
   asset_server : @app.Res[@asset.AssetServer],
   meshes : @app.ResMut[@asset.Assets[@mesh.Mesh]],
   standard_materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  screen_space_materials : @app.ResMut[
+    @asset.Assets[ScreenSpaceTextureMaterial],
+  ],
   app_status : @app.Res[AppStatus],
 ) -> Unit {
   let camera_projection = @camera.PerspectiveProjection3d::PerspectiveProjection3d()
@@ -690,7 +792,7 @@ fn setup(
     commands, windows_query,
   )
   let mirror_transform = spawn_mirror(
-    commands, meshes, standard_materials, mirror_render_target,
+    commands, meshes, screen_space_materials, mirror_render_target,
   )
   spawn_mirror_camera(
     commands, camera_transform, camera_projection, mirror_transform, mirror_render_target,
@@ -740,8 +842,13 @@ fn handle_window_resize_messages(
     @ecs.Write[@camera_camera.RenderTarget],
     @ecs.With[MirrorCamera],
   ],
-  mirrors_query : @ecs.Query[@ecs.Read[@pbr.MeshMaterial3d], @ecs.With[Mirror]],
-  standard_materials : @app.ResMut[@asset.Assets[@pbr.StandardMaterial]],
+  mirrors_query : @ecs.Query[
+    @ecs.Read[@pbr.MeshMaterial3dTyped[ScreenSpaceTextureMaterial]],
+    @ecs.With[Mirror],
+  ],
+  screen_space_materials : @app.ResMut[
+    @asset.Assets[ScreenSpaceTextureMaterial],
+  ],
   mirror_image : @app.ResMut[MirrorImage],
   resize_messages : @ecs.MessageReader[@window.WindowResized],
 ) -> Unit {
@@ -755,16 +862,15 @@ fn handle_window_resize_messages(
     target.set(Image(image))
   })
   try! mirrors_query.view(fn(_entity, material) {
-    let handle = material.value().material_asset_id()
-    let material_handle : @asset.Handle[@pbr.StandardMaterial] = @asset.Handle::new(
-      handle,
-    )
-    standard_materials.modify(fn(assets) {
-      if assets.get(material_handle) is Some(material_value) {
+    let material_handle = material.value().handle()
+    screen_space_materials.modify(fn(assets) {
+      if assets.get(material_handle) is Some(extended) {
         ignore(
           assets.set(
             material_handle,
-            material_value.with_emissive_texture(Some(image)),
+            extended.with_base(
+              extended.base().with_emissive_texture(Some(image)),
+            ),
           ),
         )
       }
@@ -1062,6 +1168,13 @@ fn main {
   let widget_click_message_key : @ecs.MessageKey[
     @widgets_lib.WidgetClickEvent[DragAction],
   ] = @widgets_lib.widget_click_event_key()
+  let mirror_material_plugin : @pbr.MaterialPlugin[ScreenSpaceTextureMaterial] = @pbr.MaterialPlugin::MaterialPlugin().with_asset_init(fn() {
+      @pbr.ExtendedMaterial::new(
+        @pbr.StandardMaterial::StandardMaterial(),
+        ScreenSpaceTextureExtension::ScreenSpaceTextureExtension(),
+      )
+    },
+  )
   @app.App::new(@ecs.World::new())
   .add_plugins(
     @mgstudio.DefaultPlugins::set(@window.WindowPlugin::{
@@ -1071,9 +1184,10 @@ fn main {
       close_when_requested: true,
     }),
   )
+  .add_plugins(mirror_material_plugin)
   .init_resource(fn() { AppStatus::AppStatus() })
   .add_message(widget_click_message_key)
-  .add_systems(Startup, @app.system_config_param6(setup).named("mirror.setup"))
+  .add_systems(Startup, @app.system_config_param7(setup).named("mirror.setup"))
   .add_systems(
     Update,
     @app.system_config_param6(handle_window_resize_messages).named(

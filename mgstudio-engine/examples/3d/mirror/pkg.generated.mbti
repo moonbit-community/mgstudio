@@ -2,6 +2,7 @@
 package "Milky2018/mgstudio/examples/3d/mirror"
 
 import {
+  "Milky2018/mgstudio/asset",
   "Milky2018/mgstudio/material",
   "Milky2018/mgstudio/mesh",
   "Milky2018/mgstudio/pbr",
@@ -17,8 +18,8 @@ pub(all) struct ScreenSpaceTextureExtension {
   dummy : Float
 }
 pub impl @pbr.MaterialExtension for ScreenSpaceTextureExtension
+pub impl @pbr.StandardMaterialExtension for ScreenSpaceTextureExtension
 
 // Type aliases
 
 // Traits
-
