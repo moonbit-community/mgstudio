@@ -34,13 +34,18 @@ const CAMERA_PITCH_LIMIT : Float = 1.5607963267948965F
 const MIRROR_ROTATION_ANGLE : Float = -FRAC_PI_2
 
 ///|
-const FOX_ASSET_PATH : String = "models/animated/Fox.glb"
-
-///|
+// Bevy's example needs no RenderLayers: its mirror camera's `invert_culling`
+// alone removes the mirror surface from its own reflection via the flipped
+// winding. mgstudio's reflected-view culling does not yet reproduce that
+// (ISS-498), so the port keeps the layer split to exclude the mirror from
+// the mirror camera's view.
 const LAYER_MAIN_SCENE : Int = 0
 
 ///|
 const LAYER_MIRROR_SURFACE : Int = 1
+
+///|
+const FOX_ASSET_PATH : String = "models/animated/Fox.glb"
 
 ///|
 priv enum DragAction {
@@ -488,7 +493,6 @@ fn calculate_mirror_camera_transform_and_projection(
       distance_from_camera_to_mirror,
     ),
   }
-
   (mirror_camera_transform, mirror_camera_projection)
 }
 
@@ -698,10 +702,12 @@ fn spawn_mirror_camera(
   let (mirror_camera_transform, mirror_camera_projection) = calculate_mirror_camera_transform_and_projection(
     camera_transform, camera_projection, mirror_transform,
   )
+  // Bevy's mirror camera keeps the DEFAULT clear color (the reflected empty
+  // space shows the standard grey backdrop, like the surrounding scene); the
+  // layer restriction below stands in for Bevy's winding-based self-culling
+  // until ISS-498 lands.
   let mirror_camera = @pbr.Camera3dBundle::new_with_projection(
-    @camera_camera.Camera::new(@color.Color::black())
-    .with_order(-1)
-    .with_invert_culling(true),
+    @camera_camera.Camera::Camera().with_order(-1).with_invert_culling(true),
     Perspective(mirror_camera_projection),
     mirror_camera_transform,
   )
