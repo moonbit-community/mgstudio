@@ -126,6 +126,33 @@ pub fn meshlet_runtime_status_from_availability(
 }
 
 ///|
+/// Bevy source: `bevy/crates/bevy_pbr/src/meshlet/mod.rs::check_meshlet_features`.
+///
+/// Bevy logs an error and exits at render startup when the GPU lacks the
+/// required meshlet features, because it has no safe way to continue.
+/// mgstudio's meshlet runtime instead soft-disables all meshlet GPU work
+/// behind `meshlet_runtime_available()` (the engineered handling of the
+/// wgpu_mbt r64uint storage-texture blocker), so this port keeps the run
+/// alive and only adopts Bevy's loud report — closing the silent empty
+/// frame that ISS-492 documented.
+fn check_meshlet_features_system(world : @ecs.World) -> Unit {
+  // Mirrors Bevy's `Res<RenderDevice>` system dependency: without a render
+  // device (headless test worlds) the check does not run.
+  guard world.get_resource(@render.render_device_resource_key) is Some(_) else {
+    return
+  }
+  if meshlet_runtime_available() {
+    return
+  }
+  let missing_features = @renderer.meshlet_missing_rust_features_u64()
+  let missing_subgroup_barrier = @renderer.meshlet_missing_native_subgroup_barrier()
+  let missing_r64 = @renderer.meshlet_missing_native_r64uint_storage_texture_api()
+  @app.log_error(
+    "MeshletPlugin can't be used: the GPU or backend lacks support for required features (missing_feature_bits=\{missing_features}, subgroup_barrier_missing=\{missing_subgroup_barrier}, r64uint_storage_texture_api_missing=\{missing_r64}). Meshlet content will not render. The r64uint storage-texture C API is a pinned wgpu-native/wgpu_mbt gap (ISS-492).",
+  )
+}
+
+///|
 pub fn meshlet_runtime_status() -> MeshletRuntimeStatus {
   meshlet_runtime_status_from_availability(meshlet_runtime_available())
 }
@@ -1563,6 +1590,12 @@ fn meshlet_configure_render_sub_app(
   let stage = @render.render_schedule_stage()
   let extract_stage = @render.render_extract_schedule_stage()
   @render.configure_base_render_sets(sub_app)
+  .add_systems(
+    @render.render_startup_schedule_stage(),
+    @app.system(check_meshlet_features_system).named(
+      "mgstudio.pbr.meshlet.check_meshlet_features",
+    ),
+  )
   .add_systems(
     extract_stage,
     @app.system(meshlet_refresh_plugin_state_system).in_set(
